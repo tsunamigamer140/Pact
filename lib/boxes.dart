@@ -8,8 +8,8 @@ class OrangeBoxWithText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 0.9 * MediaQuery.of(context).size.width, // 90% of screen width
-      height: 0.2 * MediaQuery.of(context).size.height, // 20% of screen height
+      width: 0.8 * MediaQuery.of(context).size.width, // 90% of screen width
+      height: 0.34 * MediaQuery.of(context).size.height, // 20% of screen height
       padding: const EdgeInsets.all(16.0), // Add padding inside the box
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 0, 0, 0),

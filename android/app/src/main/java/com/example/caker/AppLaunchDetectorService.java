@@ -85,9 +85,9 @@ public class AppLaunchDetectorService extends Service {
                         Log.d("AppLaunchDetector", "App in foreground: " + packageName);
 
                         // Send the app package name to Flutter
-                        if(packageName.equals("com.whatsapp")) {
+                        if(packageName.equals("com.instagram.android")) {
                             Log.d("AppLaunchDetector", "Attempting to Launch overlay after detecting: " + packageName);
-                            triggerOverlay();
+                            triggerOverlay(packageName);
                         }
                     }
                 }
@@ -130,11 +130,11 @@ public class AppLaunchDetectorService extends Service {
                 .build();
     }
 
-    private void triggerOverlay() {
+    private void triggerOverlay(String packer) {
         new Handler(Looper.getMainLooper()).post(() -> {
             if (methodChannel != null) {
-                methodChannel.invokeMethod("showOverlay", null);
-                Log.d("AppLaunchDetector", "showOverlay message sent");
+                methodChannel.invokeMethod(packer, null);
+                Log.d("AppLaunchDetector", "Message sent: "+packer);
             }
         });
     }

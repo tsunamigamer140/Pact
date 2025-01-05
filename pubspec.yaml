@@ -10,7 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_overlay_window: ^0.4.5
+  http: ^1.2.2
+  html: ^0.15.5
 
+  google_generative_ai: ^0.4.6
   pigeon: ^22.7.0
 
 
