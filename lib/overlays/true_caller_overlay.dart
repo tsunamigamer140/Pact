@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:isolate';
 import 'dart:ui';
 
+import 'package:caker/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:caker/boxes.dart';
@@ -137,155 +138,107 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   @override
   void initState() {
     super.initState();
-    if (homePort != null) return;
-    final res = IsolateNameServer.registerPortWithName(
-      _receivePort.sendPort,
-      _kPortNameOverlay,
-    );
-    log("$res : HOME");
-    _receivePort.listen(handleMessage);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (homePort != null) return;
+      final res = IsolateNameServer.registerPortWithName(
+        _receivePort.sendPort,
+        _kPortNameOverlay,
+      );
+      log("$res : HOME");
+      _receivePort.listen(handleMessage);
+    });
+  }
+
+  // Add dispose to clean up resources
+  @override
+  void dispose() {
+    IsolateNameServer.removePortNameMapping(_kPortNameOverlay);
+    _receivePort.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isGold ? _goldColors : _silverColors,
-            ),
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                isGold = !isGold;
-              });
-              FlutterOverlayWindow.getOverlayPosition().then((value) {
-                log("Overlay Position: $value");
-              });
-            },
-            child: Stack(
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      leading: Container(
-                        height: 80.0,
-                        width: 80.0,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black54),
-                          shape: BoxShape.circle,
-                          image: const DecorationImage(
-                            image: NetworkImage(
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx16VdHh2dDEZKu6KDUCXcTmMfqWuPygi-0w&s"),
-                          ),
-                        ),
-                      ),
-                      title: const Text(
-                        "Privacy Policy",
-                        style: TextStyle(
-                            fontSize: 20.0, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(messageFromOverlay ?? ""),
-                    ),
-                    OrangeBoxWithText(text: geminiResponseOne),
-                    ListTile(
-                      leading: Container(
-                        height: 80.0,
-                        width: 80.0,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black54),
-                          shape: BoxShape.circle,
-                          image: const DecorationImage(
-                            image: NetworkImage(
-                                "https://play-lh.googleusercontent.com/fgd_JMPhg5MIXlGYDv1hnsqYaP98Yf8-MtLhr7ol_sQm8ZdRkXKE9LgqdLoU6Y_Lguc=w240-h480-rw"),
-                          ),
-                        ),
-                      ),
-                      title: const Text(
-                        "Summary Policy",
-                        style: TextStyle(
-                            fontSize: 20.0, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: const Text("from Gemini"),
-                    ),
-                    OrangeBoxWithText(text: geminiResponseTwo),
-                    const TextRectangleGrid(texts: ["+ Tell me more", "+ Simpler", "+ What data?", "+ "]),
-                    const Spacer(),
-                    const Divider(color: Colors.black54),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Package Name: com.deez.nuts"),
-                              Text("John Ligma"),
-                            ],
-                          ),
-                          Text(
-                            "Pact Privacy",
-                            style: TextStyle(
-                                fontSize: 15.0, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-                Positioned(
-                  top: 10,
-                  right: 15,
-                  child: IconButton(
-                    onPressed: () async {
-                      await FlutterOverlayWindow.closeOverlay();
-                    },
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /*
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Detected App: ',
-              style: const TextStyle(color: Colors.black, fontSize: 20),
+            SwipeableBoxes(
+              boxContents: [
+                BoxContent(
+                  bodyText: geminiResponseOne,
+                  iconUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx16VdHh2dDEZKu6KDUCXcTmMfqWuPygi-0w&s',
+                  title: 'Privacy Policy',
+                  subtitle: messageFromOverlay ?? ""
+                ),
+                BoxContent(
+                  bodyText: geminiResponseTwo,
+                  iconUrl: 'https://play-lh.googleusercontent.com/fgd_JMPhg5MIXlGYDv1hnsqYaP98Yf8-MtLhr7ol_sQm8ZdRkXKE9LgqdLoU6Y_Lguc=w240-h480-rw',
+                  title: 'Summary',
+                  subtitle: 'From Gemini'
+                ),
+                // ... more box contents ...
+              ],
             ),
-            // ... other overlay content ...
-          ],
-        ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom
+                ),
+                child: ChatScreen(
+                  initialContext: geminiResponseOne,
+                ),
+              ),
+            ),
+            const Divider(color: Colors.black54),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Package Name: com.deez.nuts",
+                        style: TextStyle(color: Colors.white)),
+                      Text(
+                        "John Ligma",
+                        style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Text(
+                        "Pact Privacy",
+                        style: TextStyle(
+                          fontSize: 15.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () async {
+                        await FlutterOverlayWindow.closeOverlay();
+                      },
+                    )
+                  ],
+                ),
+              ],
+            ),
+          )
+        ],
       ),
-    );
-  }
-
-  */
+    ),
+  );
+}
 }

@@ -1,31 +1,79 @@
 import 'package:flutter/material.dart';
 
-class OrangeBoxWithText extends StatelessWidget {
-  final String text;
+// Add BoxContent model class
+class BoxContent {
+  final String bodyText;
+  final String iconUrl;
+  final String title;
+  final String subtitle;
 
-  const OrangeBoxWithText({Key? key, required this.text}) : super(key: key);
+  BoxContent({
+    required this.bodyText,
+    required this.iconUrl,
+    required this.title,
+    required this.subtitle,
+  });
+}
+
+// Update OrangeBoxWithText
+class OrangeBoxWithText extends StatelessWidget {
+  final BoxContent content;
+
+  const OrangeBoxWithText({Key? key, required this.content}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 0.8 * MediaQuery.of(context).size.width, // 90% of screen width
-      height: 0.34 * MediaQuery.of(context).size.height, // 20% of screen height
-      padding: const EdgeInsets.all(16.0), // Add padding inside the box
+      width: 0.8 * MediaQuery.of(context).size.width,
+      height: 0.15 * MediaQuery.of(context).size.height,
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 0, 0, 0),
-        borderRadius: BorderRadius.circular(8.0), // Rounded corners
+        borderRadius: BorderRadius.circular(8.0),
       ),
-      child: SingleChildScrollView(
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white, // Text color for contrast
-            fontSize: 16.0,
-            fontWeight: FontWeight.bold,
+      child: Column(
+        children: [
+          ListTile(
+            leading: Container(
+              height: 80.0,
+              width: 80.0,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black54),
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: NetworkImage(content.iconUrl),
+                ),
+              ),
+            ),
+            title: Text(
+              content.title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: Text(
+              content.subtitle,
+              style: const TextStyle(
+                color: Colors.white,
+              )
+            ),
           ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Text(
+                content.bodyText,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-    ),
-
     );
   }
 }
@@ -64,6 +112,75 @@ class TextRectangleGrid extends StatelessWidget {
           );
         }).toList(),
       ),
+    );
+  }
+}
+
+// Update SwipeableBoxes
+class SwipeableBoxes extends StatefulWidget {
+  final List<BoxContent> boxContents;
+
+  const SwipeableBoxes({Key? key, required this.boxContents}) : super(key: key);
+
+  @override
+  State<SwipeableBoxes> createState() => _SwipeableBoxesState();
+}
+
+class _SwipeableBoxesState extends State<SwipeableBoxes> {
+  late final PageController _pageController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _pageController.addListener(() {
+      setState(() {
+        _currentPage = _pageController.page?.round() ?? 0;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 0.4 * MediaQuery.of(context).size.height,
+          width: 0.8 * MediaQuery.of(context).size.width,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: widget.boxContents.length,
+            itemBuilder: (context, index) {
+              return OrangeBoxWithText(content: widget.boxContents[index]);
+            },
+          ),
+        ),
+        const SizedBox(height: 8), // Spacing between PageView and dots
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            widget.boxContents.length,
+            (index) => Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _currentPage == index 
+                    ? Colors.orange 
+                    : Colors.orange.withOpacity(0.3),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

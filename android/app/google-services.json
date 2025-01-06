@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "600385514243",
+    "firebase_url": "https://pact-59cee-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "pact-59cee",
+    "storage_bucket": "pact-59cee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:600385514243:android:502702ed80fb55d1301736",
+        "android_client_info": {
+          "package_name": "com.example.caker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDR8_zIPA2a-UJaPyTZvsQNgZeVr7SLECs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:600385514243:android:fd8a9ff5f58c2147301736",
+        "android_client_info": {
+          "package_name": "com.example.pact_app_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDR8_zIPA2a-UJaPyTZvsQNgZeVr7SLECs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -85,7 +85,7 @@ public class AppLaunchDetectorService extends Service {
                         Log.d("AppLaunchDetector", "App in foreground: " + packageName);
 
                         // Send the app package name to Flutter
-                        if(packageName.equals("com.instagram.android")) {
+                        if(!packageName.equals("com.teslacoilsw.launcher") && !packageName.equals("com.motorola.launcher3") && !packageName.equals("com.example.caker") && !packageName.equals("com.android.systemui")) {
                             Log.d("AppLaunchDetector", "Attempting to Launch overlay after detecting: " + packageName);
                             triggerOverlay(packageName);
                         }
