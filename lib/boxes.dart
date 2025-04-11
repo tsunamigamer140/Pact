@@ -119,8 +119,13 @@ class TextRectangleGrid extends StatelessWidget {
 // Update SwipeableBoxes
 class SwipeableBoxes extends StatefulWidget {
   final List<BoxContent> boxContents;
+  final bool showChat;
 
-  const SwipeableBoxes({Key? key, required this.boxContents}) : super(key: key);
+  const SwipeableBoxes({
+    Key? key,
+    required this.boxContents,
+    required this.showChat,
+  }) : super(key: key);
 
   @override
   State<SwipeableBoxes> createState() => _SwipeableBoxesState();
@@ -152,7 +157,9 @@ class _SwipeableBoxesState extends State<SwipeableBoxes> {
     return Column(
       children: [
         SizedBox(
-          height: 0.4 * MediaQuery.of(context).size.height,
+          height: widget.showChat
+            ? 0.45 * MediaQuery.of(context).size.height  // When chat is shown
+            : 0.8 * MediaQuery.of(context).size.height,  // When chat is hidden
           width: 0.8 * MediaQuery.of(context).size.width,
           child: PageView.builder(
             controller: _pageController,
@@ -175,7 +182,7 @@ class _SwipeableBoxesState extends State<SwipeableBoxes> {
                 shape: BoxShape.circle,
                 color: _currentPage == index 
                     ? Colors.orange 
-                    : Colors.orange.withOpacity(0.3),
+                    : Colors.orange.withValues(alpha:0.3),
               ),
             ),
           ),

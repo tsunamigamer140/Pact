@@ -30,5 +30,23 @@ class GeminiService {
     await _chat.sendMessage(Content.text(context));
   }
 
+  Future<String> generateSummary(String content) async {
+    try {
+      String prompt = """
+      Based on this data safety information:
+      1. Compare this app's data collection with industry standards
+      2. Suggest potential privacy improvements
+      3. Rate the overall privacy risk (Low/Medium/High)
+      Content to analyze:
+      """;
+
+      prompt = '$prompt\n$content' ;
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text ?? 'No response received';
+      } catch (e) {
+        return 'Error processing summary: $e';
+    }
+  }
+
 
 }

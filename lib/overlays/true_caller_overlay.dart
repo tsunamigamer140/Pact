@@ -19,6 +19,11 @@ class TrueCallerOverlay extends StatefulWidget {
 }
 
 class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
+  final GeminiService _geminiService = GeminiService();
+
+  bool _showChat = false;
+  bool _chatEnabled = false;
+
   String privacyPolicy = 'Loading Privacy Policy...';
   String geminiSummary = 'Loading Summary...';
   final String apiKey = 'AIzaSyBlLGFkIXLlWqTUHetyPKnLkePFeZ4THdE';
@@ -48,27 +53,14 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
 
   Future<void> getGeminiSummary(String content) async {
     try {
-      final model = GenerativeModel(
-        model: 'gemini-2.0-flash',
-        apiKey: apiKey,
-      );
-      
-      String promptTwo = """
-      Based on this data safety information:
-      1. Compare this app's data collection with industry standards
-      2. Suggest potential privacy improvements
-      3. Rate the overall privacy risk (Low/Medium/High)
-      Content to analyze:
-      """;
-      
-      promptTwo = '$promptTwo\n$content';
-      final response = await model.generateContent([Content.text(promptTwo)]);
+      final summary = await _geminiService.generateSummary(content);
       setState(() {
-        geminiSummary = response.text ?? 'No response received';
+        geminiSummary = summary;
+        _chatEnabled = true;
       });
     } catch (e) {
       setState(() {
-        geminiSummary = 'Error processing second prompt: $e';
+        geminiSummary = 'Error processing summary: $e';
       });
     }
   }
@@ -202,14 +194,15 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
       color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.9),
+          color: Colors.black.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(12),
         ),
         margin: const EdgeInsets.all(16),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            SwipeableBoxes(
+            Expanded(
+              flex: _showChat ? 7 : 10,
+              child: SwipeableBoxes(
               boxContents: [
                 BoxContent(
                   bodyText: privacyPolicy,
@@ -223,16 +216,19 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                   title: 'Summary',
                   subtitle: 'From Gemini'
                 ),
-                // ... more box contents ...
               ],
+              showChat: _showChat,
             ),
+          ),
+          if (_showChat)
             Expanded(
+              flex: 3,
               child: Padding(
                 padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewInsets.bottom
                 ),
                 child: ChatScreen(
-                  initialContext: privacyPolicy,
+                  initialContext: geminiSummary,
                 ),
               ),
             ),
@@ -242,41 +238,41 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Package Name: com.deez.nuts",
-                        style: TextStyle(color: Colors.white)),
-                      Text(
-                        "John Ligma",
-                        style: TextStyle(color: Colors.white)),
-                    ],
+                  const Text(
+                    "Pact Privacy",
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white
+                    ),
                   ),
-                  Row(
-                    children: [
-                      const Text(
-                        "Pact Privacy",
-                        style: TextStyle(
-                          fontSize: 15.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white
-                        ),
+                  ElevatedButton(
+                    onPressed: _chatEnabled
+                      ? () => setState(() => _showChat = !_showChat)
+                      : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[850],
+                      disabledBackgroundColor: Colors.grey[800],
+                    ),
+                    child: Text(
+                      _showChat ? "Hide Chat" : "Show Chat",
+                      style: TextStyle(
+                        color: _chatEnabled ? Colors.white : Colors.grey,
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () async {
-                        await FlutterOverlayWindow.closeOverlay();
-                      },
-                    )
-                  ],
-                ),
-              ],
-            ),
-          )
-        ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () async {
+                      await FlutterOverlayWindow.closeOverlay();
+                    },
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
