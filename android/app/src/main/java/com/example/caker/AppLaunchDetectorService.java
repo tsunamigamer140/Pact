@@ -6,6 +6,9 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -25,12 +28,34 @@ import io.flutter.embedding.engine.FlutterEngineCache;
 public class AppLaunchDetectorService extends Service {
     private static final String CHANNEL_ID = "AppLaunchServiceChannel";
     private static final String METHOD_CHANNEL = "com.example.caker/overlay";
+    private static final String PREFS_NAME = "SeenAppsPrefs";
     private MethodChannel methodChannel;
     private FlutterEngine flutterEngine;
+
+    private boolean isSystemApp(String packageName) {
+        try {
+            ApplicationInfo ai = getPackageManager().getApplicationInfo(packageName, 0);
+            return (ai.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private boolean isFirstTimeSeen(String packageName) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean isFirstTime = !prefs.contains(packageName);
+        if (isFirstTime) {
+            prefs.edit().putBoolean(packageName, true).apply();
+        }
+        return isFirstTime;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().clear().apply();
+        Log.d("AppLaunchDetector", "Reset seen apps list");
         
         flutterEngine = new FlutterEngine(this);
         flutterEngine.getDartExecutor().executeDartEntrypoint(
@@ -41,31 +66,7 @@ public class AppLaunchDetectorService extends Service {
         } else {
             Log.e("AppLaunchDetector", "FlutterEngine is not initialized or not found in cache.");
         }
-        /*flutterEngine.getDartExecutor().executeDartEntryPoint(
-            DartExecutor.DartEntryPoint.createDefault()
-        );
-        */
-
-        //createNotificationChannel();
-        //startForeground(1, getNotification("Monitoring app launches NOW..."));
-
-        //Initialize the MethodChannel for communication with Flutter
-        //methodChannel = new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), METHOD_CHANNEL);
     }
-
-    /*
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "App Launch Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
-        }
-    }
-    */
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -82,11 +83,13 @@ public class AppLaunchDetectorService extends Service {
                     usageEvents.getNextEvent(event);
                     if (event.getEventType() == UsageEvents.Event.MOVE_TO_FOREGROUND) {
                         String packageName = event.getPackageName();
-                        Log.d("AppLaunchDetector", "App in foreground: " + packageName);
-
-                        // Send the app package name to Flutter
-                        if(!packageName.equals("com.teslacoilsw.launcher") && !packageName.equals("com.motorola.launcher3") && !packageName.equals("com.example.caker") && !packageName.equals("com.android.systemui")) {
-                            Log.d("AppLaunchDetector", "Attempting to Launch overlay after detecting: " + packageName);
+                        
+                        if (!packageName.equals("com.example.caker") && 
+                        !packageName.equals("com.teslacoilsw.launcher") &&
+                            !isSystemApp(packageName) && 
+                            isFirstTimeSeen(packageName)) {
+                            
+                            Log.d("AppLaunchDetector", "New non-system app detected: " + packageName);
                             triggerOverlay(packageName);
                         }
                     }

@@ -9,6 +9,7 @@ import 'package:caker/boxes.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:google_generative_ai/google_generative_ai.dart';
+import '../services/gemini_service.dart';
 
 class TrueCallerOverlay extends StatefulWidget {
   const TrueCallerOverlay({super.key});
@@ -18,19 +19,19 @@ class TrueCallerOverlay extends StatefulWidget {
 }
 
 class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
-  bool isGold = true;
-
-  String pageContent = 'Loading...';
-  String geminiResponseOne = '';
-  String geminiResponseTwo = '';
-  final String apiKey = 'AIzaSyCQSVf0lpHgZ7t_nUDdZdU-Fv3xcmAznwQ';
+  String privacyPolicy = 'Loading Privacy Policy...';
+  String geminiSummary = 'Loading Summary...';
+  final String apiKey = 'AIzaSyBlLGFkIXLlWqTUHetyPKnLkePFeZ4THdE';
 
   static const String _kPortNameOverlay = 'OVERLAY';
   static const String _kPortNameHome = 'UI';
   final _receivePort = ReceivePort();
   SendPort? homePort;
   String? messageFromOverlay;
+  String iconurl = 'https://play-lh.googleusercontent.com/fgd_JMPhg5MIXlGYDv1hnsqYaP98Yf8-MtLhr7ol_sQm8ZdRkXKE9LgqdLoU6Y_Lguc=w240-h480-rw';
 
+  /*
+  Alternate Colours for the overlay background
   final _goldColors = const [
     Color.fromARGB(200, 162, 120, 13),
     Color.fromARGB(200, 235, 209, 151),
@@ -43,34 +44,12 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
     Color(0xFFD7D7D8),
     Color(0xFFAEB2B8),
   ];
+  */
 
-  Future<void> processWithGeminiPromptOne(String content) async {
+  Future<void> getGeminiSummary(String content) async {
     try {
       final model = GenerativeModel(
-        model: 'gemini-pro',
-        apiKey: apiKey,
-      );
-      
-      String promptOne = """
-      Can you clean up the following data collection from a privacy policy and present it as is in a legible manner?
-      """;
-      
-      promptOne = '$promptOne\n$content';
-      final response = await model.generateContent([Content.text(promptOne)]);
-      setState(() {
-        geminiResponseOne = response.text ?? 'No response received';
-      });
-    } catch (e) {
-      setState(() {
-        geminiResponseOne = 'Error processing first prompt: $e';
-      });
-    }
-  }
-
-  Future<void> processWithGeminiPromptTwo(String content) async {
-    try {
-      final model = GenerativeModel(
-        model: 'gemini-pro',
+        model: 'gemini-2.0-flash',
         apiKey: apiKey,
       );
       
@@ -85,43 +64,102 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
       promptTwo = '$promptTwo\n$content';
       final response = await model.generateContent([Content.text(promptTwo)]);
       setState(() {
-        geminiResponseTwo = response.text ?? 'No response received';
+        geminiSummary = response.text ?? 'No response received';
       });
     } catch (e) {
       setState(() {
-        geminiResponseTwo = 'Error processing second prompt: $e';
+        geminiSummary = 'Error processing second prompt: $e';
       });
     }
   }
 
-  Future<void> scrapeWebsite() async {
-    try {
-      log('$messageFromOverlay');
-      final String polAdd = 'https://play.google.com/store/apps/datasafety?id=$messageFromOverlay&hl=en_US';
-      log(polAdd);
-      final url = Uri.parse(polAdd);
-      final response = await http.get(url);
-      
-      if (response.statusCode == 200) {
-        var document = parser.parse(response.body);
-        var textContent = document.body?.text ?? 'No content found';
-        
-        setState(() {
-          pageContent = textContent;
-        });
-        
-        // Process both prompts sequentially
-        await processWithGeminiPromptOne(textContent);
-        await processWithGeminiPromptTwo(textContent);
-      } else {
-        setState(() {
-          pageContent = 'Failed to load content. Status: ${response.statusCode}';
-        });
-      }
-    } catch (e) {
+  Future<void> handleApp() async {
+    if(messageFromOverlay != null){
+      final policyText = await getPrivacyPolicy(messageFromOverlay!);
       setState(() {
-        pageContent = 'Error loading content: $e';
+        privacyPolicy = policyText;
       });
+
+      await getGeminiSummary(policyText);
+    }
+  }
+
+  Future<String> getPrivacyPolicy(String packageName) async {
+    try {
+      // Step 1: Get Play Store page
+      final playStoreUrl = 'https://play.google.com/store/apps/datasafety?id=$packageName&hl=en_US';
+      log('Fetching Play Store page: $playStoreUrl');
+      final response = await http.get(
+        Uri.parse(playStoreUrl),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        },
+        );
+      
+      if (response.statusCode != 200) {
+        return 'Failed to fetch Play Store page';
+      }
+      log('Response body length: ${response.body.length}');
+
+      // Step 2: Parse HTML and find privacy policy link
+      final document = parser.parse(response.body);
+      log('Document: $document');
+      final privacyLinks = document.getElementsByClassName('GO2pB');
+      final imgElement = document.getElementsByClassName('T75of hmeIpf').firstOrNull;
+      iconurl = imgElement?.attributes['src'] ?? 'https://play-lh.googleusercontent.com/fgd_JMPhg5MIXlGYDv1hnsqYaP98Yf8-MtLhr7ol_sQm8ZdRkXKE9LgqdLoU6Y_Lguc=w240-h480-rw';
+
+      log('Privacy Links: $privacyLinks');
+      String? privacyUrl;
+      
+      for (var element in privacyLinks) {
+        final link = element.attributes['href'];
+        log('Link: $link');
+        if (link != null && (link.contains('privacy') || link.contains('policy'))) {
+          privacyUrl = link;
+          break;
+        }
+      }
+
+      log('Privacy URL: $privacyUrl');
+      if (privacyUrl == null) {
+        return 'Privacy policy link not found';
+      }
+
+      // Step 3: Fetch privacy policy content
+      final policyResponse = await http.get(
+        Uri.parse(privacyUrl),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        },
+      );
+      if (policyResponse.statusCode != 200) {
+        return 'Failed to fetch privacy policy';
+      }
+
+      // Step 4: Parse and clean privacy policy text
+      final policyDocument = parser.parse(policyResponse.body);
+      //final textContent = policyDocument.body?.text ?? 'No content found';
+
+      // Find all paragraph elements
+      final paragraphs = policyDocument.getElementsByTagName('p');
+      log('Found ${paragraphs.length} paragraphs');
+
+      if (paragraphs.isEmpty) {
+        return 'No paragraph content found';
+      }
+
+      // Combine all paragraph texts
+      final textContent = paragraphs
+          .map((p) => p.text.trim())
+          .where((text) => text.isNotEmpty)  // Filter out empty paragraphs
+          .join('\n\n');  // Add double newline between paragraphs
+
+      return textContent.isEmpty ? 'No content found in paragraphs' : textContent;
+    } catch (e) {
+      log('Error fetching privacy policy: $e');
+      return 'Error: Failed to fetch privacy policy';
     }
   }
 
@@ -131,7 +169,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
       messageFromOverlay = '$message';
     });
     if (message is String && message.isNotEmpty) {
-      scrapeWebsite();
+      handleApp();
     }
   }
 
@@ -174,13 +212,13 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
             SwipeableBoxes(
               boxContents: [
                 BoxContent(
-                  bodyText: geminiResponseOne,
-                  iconUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx16VdHh2dDEZKu6KDUCXcTmMfqWuPygi-0w&s',
+                  bodyText: privacyPolicy,
+                  iconUrl: iconurl,
                   title: 'Privacy Policy',
                   subtitle: messageFromOverlay ?? ""
                 ),
                 BoxContent(
-                  bodyText: geminiResponseTwo,
+                  bodyText: geminiSummary,
                   iconUrl: 'https://play-lh.googleusercontent.com/fgd_JMPhg5MIXlGYDv1hnsqYaP98Yf8-MtLhr7ol_sQm8ZdRkXKE9LgqdLoU6Y_Lguc=w240-h480-rw',
                   title: 'Summary',
                   subtitle: 'From Gemini'
@@ -194,7 +232,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                   bottom: MediaQuery.of(context).viewInsets.bottom
                 ),
                 child: ChatScreen(
-                  initialContext: geminiResponseOne,
+                  initialContext: privacyPolicy,
                 ),
               ),
             ),

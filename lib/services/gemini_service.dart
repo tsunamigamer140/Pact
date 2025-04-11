@@ -1,12 +1,12 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class GeminiService {
-  static const apiKey = 'AIzaSyCQSVf0lpHgZ7t_nUDdZdU-Fv3xcmAznwQ';
+  static const apiKey = 'AIzaSyBlLGFkIXLlWqTUHetyPKnLkePFeZ4THdE';
   final GenerativeModel _model;
   late ChatSession _chat;
 
   GeminiService() : _model = GenerativeModel(
-    model: 'gemini-pro',
+    model: 'gemini-2.0-flash',
     apiKey: apiKey,
   ) {
     _startNewChat();
