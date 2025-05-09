@@ -8,7 +8,7 @@ import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:caker/boxes.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
-import 'package:google_generative_ai/google_generative_ai.dart';
+//import 'package:google_generative_ai/google_generative_ai.dart';
 import '../services/gemini_service.dart';
 
 class TrueCallerOverlay extends StatefulWidget {
@@ -29,7 +29,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   final String apiKey = 'AIzaSyBlLGFkIXLlWqTUHetyPKnLkePFeZ4THdE';
 
   static const String _kPortNameOverlay = 'OVERLAY';
-  static const String _kPortNameHome = 'UI';
+  //static const String _kPortNameHome = 'UI';
   final _receivePort = ReceivePort();
   SendPort? homePort;
   String? messageFromOverlay;

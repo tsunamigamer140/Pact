@@ -11,3 +11,8 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+
+/lib/services/gemini_service.dart
+/android/app/google-services.json
+firebase.json
